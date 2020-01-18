@@ -1,0 +1,11 @@
+{
+  "autoload": {
+    "psr-4": {
+      "c20\\api\\": "src/"
+    }
+  },
+  "require": {
+    "gabordemooij/redbean": "^5.4",
+    "wixel/gump": "^1.5"
+  }
+}
