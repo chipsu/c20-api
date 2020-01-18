@@ -8,7 +8,14 @@ class DB
 {
   public function __construct()
   {
-    R::setup();
+    $dsn = 'sqlite:/tmp/c20.db';
+    #$dsn = 'sqlite:memory:';
+    R::setup($dsn);
+  }
+
+  public function find($type)
+  {
+    return R::find($type);
   }
 
   public function dispense($type, array $data = [])
@@ -16,6 +23,17 @@ class DB
     return R::dispense(['_type' => $type] + $data);
   }
 
+  public function load($type, $id)
+  {
+    return R::load($type, $id);
+  }
+
+  public function store($bean)
+  {
+    return R::store($bean);
+  }
+
+  # TODO: filter stuff not in rules
   public function validate($bean)
   {
     $gump = new \GUMP;
