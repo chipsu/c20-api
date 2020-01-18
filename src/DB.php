@@ -8,8 +8,7 @@ class DB
 {
   public function __construct()
   {
-    $dsn = 'sqlite:/tmp/c20.db';
-    #$dsn = 'sqlite:memory:';
+    $dsn = getenv('C20_DB_DSN') ?? 'sqlite:/tmp/c20.db';
     R::setup($dsn);
   }
 
@@ -49,5 +48,10 @@ class DB
       }
     }
     $bean->import($data);
+  }
+
+  public function nuke()
+  {
+    R::nuke();
   }
 }

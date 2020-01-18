@@ -7,5 +7,8 @@
   "require": {
     "gabordemooij/redbean": "^5.4",
     "wixel/gump": "^1.5"
+  },
+  "require-dev": {
+    "peridot-php/peridot": "^1.19"
   }
 }
