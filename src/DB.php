@@ -2,13 +2,29 @@
 
 namespace c20\api;
 
+use InvalidArgumentException;
 use RedBeanPHP\R as R;
+
+define('REDBEAN_MODEL_PREFIX', '\\c20\\api\\');
+
+class ValidationError extends \metrica\core\Exception {
+  protected array $errors;
+
+  public function __construct(array $errors)
+  {
+    $this->errors = $errors;
+  }
+
+  public function getErrors(): array {
+    return $this->errors;
+  }
+}
 
 class DB
 {
   public function __construct()
   {
-    $dsn = getenv('C20_DB_DSN') ?? 'sqlite:/tmp/c20.db';
+    $dsn = getenv('C20_DB_DSN') ?: 'sqlite::memory:';
     R::setup($dsn);
   }
 
@@ -33,21 +49,34 @@ class DB
   }
 
   # TODO: filter stuff not in rules
-  public function validate($bean)
+  # TODO: Move filter away from DB? Maybe all validation?
+  public function validate(\RedBeanPHP\OODBBean $bean)
   {
-    $gump = new \GUMP;
+    $errors = $this->errors($bean);
+    if($errors) {
+      throw $errors;
+    }
+  }
+
+  public function errors(\RedBeanPHP\OODBBean $bean): ?ValidationError
+  {
     $model = $bean->box();
+    if(!$model) {
+      throw new InvalidArgumentException('$bean does not have a model');
+    }
+    if(empty($model::$rules)) {
+      throw new InvalidArgumentException('$bean does not have any rules');
+    }
+    $gump = new \GUMP;
     $data = $bean->export();
-    if (!empty($model->filter)) {
-      $data = $gump->filter($data, $model->filter);
+    if (!empty($model::$filter)) {
+      $data = $gump->filter($data, $model::$filter);
     }
-    if (!empty($model->rules)) {
-      if (!$gump->validate($data, $model->rules)) {
-        print_r($gump->get_errors_array());
-        throw new Exception(('invalid data'));
-      }
+    if ($gump->validate($data, $model::$rules) === true) {
+      $bean->import($data);
+      return null;
     }
-    $bean->import($data);
+    return new ValidationError($gump->get_errors_array());
   }
 
   public function nuke()

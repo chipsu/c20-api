@@ -1,26 +1,12 @@
 <?php
 
-require_once __DIR__ . '/../../php-core/vendor/autoload.php';
+require_once __DIR__ . '/Helpers.php';
 
-use metrica\core\Bootstrap;
-use metrica\core\Router;
 use metrica\core\Request;
 use metrica\core\Uri;
 use metrica\core\Headers;
 use metrica\core\StringStream;
-use c20\api\DB;
 use c20\api\UserModule;
-
-function di() {
-  static $di = null;
-  if($di === null) {
-    putenv('C20_DB_DSN=sqlite::memory:');
-    $di = Bootstrap::di([
-      'db' => DB::class,
-    ]);
-  }
-  return $di;
-}
 
 describe('UserModule', function() {
   $this->di = di();
@@ -37,11 +23,11 @@ describe('UserModule', function() {
       $headers = Headers::fromArray([
         'HTTP_CONTENT_TYPE' => 'application/json',
       ]);
-      $body = new StringStream(json_encode(['username' => 'test']));
+      $body = new StringStream(json_encode(['username' => 'testuser1', 'password' => 'hackers2', 'email' => 'hacker2@example.com']));
       $request = new Request(Request::METHOD_POST, $uri, $headers, null, null, $body);
       $result = $this->di->get('router')->invokeRequest($request);
       assert(is_object($result));
-      assert($result->username == 'test');
+      assert($result->username == 'testuser1');
     });
 
     it('update', function() {
@@ -49,11 +35,11 @@ describe('UserModule', function() {
       $headers = Headers::fromArray([
         'HTTP_CONTENT_TYPE' => 'application/json',
       ]);
-      $body = new StringStream(json_encode(['username' => 'test2']));
+      $body = new StringStream(json_encode(['username' => 'testuser2']));
       $request = new Request(Request::METHOD_PUT, $uri, $headers, null, null, $body);
       $result = $this->di->get('router')->invokeRequest($request);
       assert(is_object($result));
-      assert($result->username == 'test2');
+      assert($result->username == 'testuser2');
     });
 
     it('list', function() {
@@ -62,7 +48,7 @@ describe('UserModule', function() {
       $result = $this->di->get('router')->invokeRequest($request);
       assert(is_array($result));
       assert(count($result) == 1);
-      assert($result[0]['username'] == 'test2');
+      assert($result[0]['username'] == 'testuser2');
     });
   });
 });

@@ -2,7 +2,7 @@
 
 namespace c20\api;
 
-define('REDBEAN_MODEL_PREFIX', '\\c20\\api\\');
+define('C20_DB_DSN', 'sqlite:/tmp/c20.db');
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../../php-core/vendor/autoload.php';
