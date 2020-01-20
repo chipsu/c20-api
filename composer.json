@@ -6,7 +6,8 @@
   },
   "require": {
     "gabordemooij/redbean": "^5.4",
-    "wixel/gump": "^1.5"
+    "wixel/gump": "^1.5",
+    "adhocore/jwt": "^1.0"
   },
   "require-dev": {
     "peridot-php/peridot": "^1.19"
