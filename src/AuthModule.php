@@ -29,7 +29,7 @@ class AuthModule
       }
       try {
         $payload = $jwt->decode($auth[1]);
-        return $payload;
+        return ['exp' => $payload['exp']];
       } catch(JWTException $ex) {
         throw new HttpException(400, $ex->getMessage());
       }
