@@ -3,27 +3,20 @@
 namespace c20\api;
 
 # TODO: Move to .env
-define('C20_DB_DSN', 'sqlite:/tmp/c20.db');
+$_ENV['C20_DB_DSN'] = 'sqlite:/tmp/c20.db';
+define('C20_MODULES', '/.*/');
 define('C20_JWT_SECRET', 'secret');
+define('C20_HASHIDS_KEY', 'secret');
+define('C20_HASHIDS_LENGTH', 5);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../../php-core/vendor/autoload.php';
 
-use metrica\core\Bootstrap;
-use Ahc\Jwt\JWT;
+use metrica\core\Error;
 
-$modules = [
-  'authModule' => AuthModule::class,
-  'userModule' => UserModule::class,
-  'contentModule' => ContentModule::class,
-];
+Error::init();
 
-$di = Bootstrap::di([
-  'db' => DB::class,
-  'jwt' => function() {
-    return new JWT(C20_JWT_SECRET);
-  },
-] + $modules);
+$di = Bootstrap::di();
 
 $di->get('router')->get('/', function (DB $db) {
   echo '<pre>';
@@ -36,9 +29,5 @@ $di->get('router')->get('/', function (DB $db) {
     'version' => '1',
   ];
 });
-
-foreach(array_keys($modules) as $module) {
-  $di->get($module)->init();
-}
 
 $di->get('app')->run();

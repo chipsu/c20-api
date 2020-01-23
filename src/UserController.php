@@ -2,7 +2,7 @@
 
 namespace c20\api;
 
-class UserModule extends CrudModule
+class UserController extends CrudController
 {
   public function init()
   {

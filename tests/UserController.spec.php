@@ -6,15 +6,16 @@ use metrica\core\Request;
 use metrica\core\Uri;
 use metrica\core\Headers;
 use metrica\core\StringStream;
-use c20\api\UserModule;
+use c20\api\UserController;
 
-describe('UserModule', function() {
+describe('UserController', function() {
   $this->di = di();
   $this->di->get('db')->nuke();
+  $this->user_id = null;
 
   beforeEach(function() {
-    $this->module = new UserModule($this->di->get('router'));
-    $this->module->init();
+    $this->controller = new UserController($this->di->get('router'), $this->di->get('db'));
+    $this->controller->init();
   });
 
   describe('test route', function() {
@@ -26,20 +27,22 @@ describe('UserModule', function() {
       $body = new StringStream(json_encode(['username' => 'testuser1', 'password' => 'hackers2', 'email' => 'hacker2@example.com']));
       $request = new Request(Request::METHOD_POST, $uri, $headers, null, null, $body);
       $result = $this->di->get('router')->invokeRequest($request);
-      assert(is_object($result));
-      assert($result->username == 'testuser1');
+      assert(is_array($result));
+      assert(!empty($result['id']));
+      assert($result['username'] == 'testuser1');
+      $this->user_id = $result['id'];
     });
 
     it('update', function() {
-      $uri = Uri::parse('/user/1');
+      $uri = Uri::parse('/user/' . $this->user_id);
       $headers = Headers::fromArray([
         'HTTP_CONTENT_TYPE' => 'application/json',
       ]);
       $body = new StringStream(json_encode(['username' => 'testuser2']));
       $request = new Request(Request::METHOD_PUT, $uri, $headers, null, null, $body);
       $result = $this->di->get('router')->invokeRequest($request);
-      assert(is_object($result));
-      assert($result->username == 'testuser2');
+      assert(is_array($result));
+      assert($result['username'] == 'testuser2');
     });
 
     it('list', function() {

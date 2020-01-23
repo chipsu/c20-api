@@ -4,28 +4,52 @@ namespace c20\api;
 
 use InvalidArgumentException;
 use RedBeanPHP\R as R;
+use RedBeanPHP\OODBBean;
+use Hashids\Hashids;
+use metrica\core\EnvInterface;
 
 define('REDBEAN_MODEL_PREFIX', '\\c20\\api\\');
 
-class ValidationError extends \metrica\core\Exception {
+class ValidationError extends \metrica\core\HttpException {
   protected array $errors;
 
   public function __construct(array $errors)
   {
+    parent::__construct(400, print_r($errors, true));
     $this->errors = $errors;
   }
 
   public function getErrors(): array {
     return $this->errors;
   }
+
+  public function getResponseData(): array
+  {
+    return $this->getErrors();
+  }
 }
 
 class DB
 {
-  public function __construct()
+  protected Hashids $hashids;
+
+  public function __construct(EnvInterface $env, Hashids $hashids)
   {
-    $dsn = getenv('C20_DB_DSN') ?: 'sqlite::memory:';
+    $this->hashids = $hashids;
+    $dsn = $env->get('C20_DB_DSN', 'sqlite::memory:');
     R::setup($dsn);
+  }
+
+  public function one(string $type, array $filter)
+  {
+    $query = '';
+    $params = [];
+    $filter = $this->decode($filter);
+    foreach($filter as $key => $value) {
+      $query .= ' ' . $key . ' = :' . $key . ' ';
+      $params[':' . $key] = $value;
+    }
+    return R::findOne($type, $query, $params);
   }
 
   public function find($type)
@@ -40,6 +64,10 @@ class DB
 
   public function load($type, $id)
   {
+    var_dump(['load', $id]);
+
+    $id = $this->hashids->decode($id)[0]; # todo decode/encode helpers in module
+    var_dump(['load', $id]);
     return R::load($type, $id);
   }
 
@@ -50,7 +78,8 @@ class DB
 
   # TODO: filter stuff not in rules
   # TODO: Move filter away from DB? Maybe all validation?
-  public function validate(\RedBeanPHP\OODBBean $bean)
+  # TODO: Separate rule-sets for user and system-data?
+  public function validate(OODBBean $bean)
   {
     $errors = $this->errors($bean);
     if($errors) {
@@ -58,7 +87,7 @@ class DB
     }
   }
 
-  public function errors(\RedBeanPHP\OODBBean $bean): ?ValidationError
+  public function errors(OODBBean $bean): ?ValidationError
   {
     $model = $bean->box();
     if(!$model) {
@@ -82,5 +111,41 @@ class DB
   public function nuke()
   {
     R::nuke();
+  }
+
+  public function encode(array $data): array
+  {
+    # todo map from model
+    $fields = ['id'];
+    foreach($fields as $key) {
+      if(isset($data[$key])) {
+        $data[$key] = $this->hashids->encode($data[$key]);
+      }
+    }
+    return $data;
+  }
+
+  public function decode(array $data): array
+  {
+    # todo map from model
+    $fields = ['id'];
+    foreach($fields as $key) {
+      if(isset($data[$key])) {
+        $data[$key] = $this->hashids->decode($data[$key])[0];
+      }
+    }
+    return $data;
+  }
+
+  public function export(OODBBean $bean): array
+  {
+    $data = $bean->export();
+    return $this->encode($data);
+  }
+
+  public function import(OODBBean $bean, array $data)
+  {
+    $data = $this->decode($data);
+    $bean->import($data);
   }
 }

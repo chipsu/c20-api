@@ -2,7 +2,7 @@
 
 namespace c20\api;
 
-class ContentModule extends CrudModule
+class ContentController extends CrudController
 {
   public function init()
   {
