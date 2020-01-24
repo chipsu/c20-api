@@ -29,6 +29,15 @@ class ValidationError extends \metrica\core\HttpException {
   }
 }
 
+
+class DBLogger implements \RedBeanPHP\Observer
+{
+  public function onEvent($eventname, $bean)
+  {
+    error_log('DB ' . $eventname . ': ' . $bean->getSQL());
+  }
+}
+
 class DB
 {
   protected Hashids $hashids;
@@ -38,18 +47,28 @@ class DB
     $this->hashids = $hashids;
     $dsn = $env->get('C20_DB_DSN', 'sqlite::memory:');
     R::setup($dsn);
+    R::getDatabaseAdapter()->addEventListener('sql_exec', new DBLogger);
   }
 
-  public function one(string $type, array $filter)
+  public function one(string $type, array $filter, array $with = [])
   {
     $query = '';
     $params = [];
     $filter = $this->decode($filter);
     foreach($filter as $key => $value) {
-      $query .= ' ' . $key . ' = :' . $key . ' ';
+      $query .= ' `' . $type . '`.`' . $key . '` = :' . $key . ' ';
       $params[':' . $key] = $value;
     }
-    return R::findOne($type, $query, $params);
+    $join = '';
+    foreach($with as $w) {
+      $join .= ' LEFT JOIN `' . $w . '` ON `' . $w . '`.`' . $type . '_id` = `' . $type . '`.`id`';
+    }
+    $sql = 'SELECT `order`.*,`orderrow`.* FROM `' . $type . '` ' . $join . ' WHERE ' . ($query ?: '1') . ' LIMIT 1';
+    $row = R::getRow($sql, $params);
+    if(!$row && $with) {
+      return $this->one($type, $filter);
+    }
+    return $row ? R::convertToBean($type, $row) : null;
   }
 
   public function find($type)

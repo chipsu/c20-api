@@ -11,6 +11,7 @@ abstract class CrudController
   protected DB $db;
   protected ?string $type;
   protected ?string $pk;
+  protected array $with;
 
   public function __construct(RouterInterface $router, DB $db)
   {
@@ -18,10 +19,11 @@ abstract class CrudController
     $this->db = $db;
   }
 
-  public function initRoutes(string $type, string $pk = 'id')
+  public function initRoutes(string $type, string $pk = 'id', array $with = [])
   {
     $this->type = $type;
     $this->pk = $pk;
+    $this->with = $with;
     $this->router->get('/' . $type . '/<' . $pk . '>', [$this, 'one']);
     $this->router->get('/' . $type, [$this, 'read']);
     $this->router->put('/' . $type . '/<' . $pk . '>', [$this, 'update']);
@@ -30,7 +32,7 @@ abstract class CrudController
 
   public function one(RequestInterface $request)
   {
-    $bean = $this->db->one($this->type, [$this->pk => $request->getParam($this->pk)]);
+    $bean = $this->db->one($this->type, [$this->pk => $request->getParam($this->pk)], $this->with);
     if(!$bean) {
       return 404;
     }
